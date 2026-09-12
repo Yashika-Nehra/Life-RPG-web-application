@@ -29,6 +29,8 @@ app.disable("x-powered-by");
 
 app.use(express.json({ limit: "50kb" }));
 
+/* ---------------- HELPERS ---------------- */
+
 function cleanName(value) {
   return String(value ?? "").trim().replace(/\s+/g, " ");
 }
@@ -97,25 +99,28 @@ app.get("/api/health", (_req, res) => {
 app.post("/api/auth/signup", async (req, res) => {
   try {
     const displayName = cleanName(req.body.displayName);
-    const email = String(req.body.email || "").trim().toLowerCase();
+    const email = String(req.body.email || "")
+      .trim()
+      .toLowerCase();
+
     const password = String(req.body.password || "");
 
     if (displayName.length < 2 || displayName.length > 40) {
-      return res
-        .status(400)
-        .json({ error: "Name must be 2–40 characters." });
+      return res.status(400).json({
+        error: "Name must be 2–40 characters.",
+      });
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return res
-        .status(400)
-        .json({ error: "Enter a valid email address." });
+      return res.status(400).json({
+        error: "Enter a valid email address.",
+      });
     }
 
     if (password.length < 8 || password.length > 100) {
-      return res
-        .status(400)
-        .json({ error: "Password must be 8–100 characters." });
+      return res.status(400).json({
+        error: "Password must be 8–100 characters.",
+      });
     }
 
     const exists = db
@@ -123,9 +128,9 @@ app.post("/api/auth/signup", async (req, res) => {
       .get(email);
 
     if (exists) {
-      return res
-        .status(409)
-        .json({ error: "An account with that email already exists." });
+      return res.status(409).json({
+        error: "An account with that email already exists.",
+      });
     }
 
     const hash = await hashPassword(password);
@@ -146,7 +151,11 @@ app.post("/api/auth/signup", async (req, res) => {
 
     const session = createSession(user.id);
 
-    setSessionCookie(res, session.token, session.expires);
+    setSessionCookie(
+      res,
+      session.token,
+      session.expires
+    );
 
     res.status(201).json({
       user: publicUser(user),
@@ -162,7 +171,10 @@ app.post("/api/auth/signup", async (req, res) => {
 
 app.post("/api/auth/login", async (req, res) => {
   try {
-    const email = String(req.body.email || "").trim().toLowerCase();
+    const email = String(req.body.email || "")
+      .trim()
+      .toLowerCase();
+
     const password = String(req.body.password || "");
 
     const user = db
@@ -171,7 +183,10 @@ app.post("/api/auth/login", async (req, res) => {
 
     if (
       !user ||
-      !(await verifyPassword(password, user.password_hash))
+      !(await verifyPassword(
+        password,
+        user.password_hash
+      ))
     ) {
       return res.status(401).json({
         error: "Email or password is incorrect.",
@@ -180,7 +195,11 @@ app.post("/api/auth/login", async (req, res) => {
 
     const session = createSession(user.id);
 
-    setSessionCookie(res, session.token, session.expires);
+    setSessionCookie(
+      res,
+      session.token,
+      session.expires
+    );
 
     res.json({
       user: publicUser(user),
@@ -194,13 +213,17 @@ app.post("/api/auth/login", async (req, res) => {
   }
 });
 
-app.post("/api/auth/logout", requireUser, (req, res) => {
-  destroySession(req.sessionToken);
+app.post(
+  "/api/auth/logout",
+  requireUser,
+  (req, res) => {
+    destroySession(req.sessionToken);
 
-  clearSessionCookie(res);
+    clearSessionCookie(res);
 
-  res.status(204).end();
-});
+    res.status(204).end();
+  }
+);
 
 app.get("/api/me", requireUser, (req, res) => {
   const user = db
@@ -266,307 +289,336 @@ app.post("/api/quests", requireUser, (req, res) => {
   });
 });
 
-app.patch("/api/quests/:id", requireUser, (req, res) => {
-  const id = Number(req.params.id);
+app.patch(
+  "/api/quests/:id",
+  requireUser,
+  (req, res) => {
+    const id = Number(req.params.id);
 
-  const v = validateQuest(req.body);
+    const v = validateQuest(req.body);
 
-  if (v.error) {
-    return res.status(400).json({
-      error: v.error,
-    });
-  }
-
-  const q = db
-    .prepare(
-      "SELECT * FROM quests WHERE id=? AND user_id=?"
-    )
-    .get(id, req.user.id);
-
-  if (!q) {
-    return res.status(404).json({
-      error: "That deed is not in your ledger.",
-    });
-  }
-
-  db.prepare(
-    "UPDATE quests SET name=?,category=?,difficulty=? WHERE id=?"
-  ).run(
-    v.name,
-    v.category,
-    v.difficulty,
-    id
-  );
-
-  const next = db
-    .prepare("SELECT * FROM quests WHERE id=?")
-    .get(id);
-
-  res.json({
-    quest: {
-      ...next,
-      xp: DIFFICULTIES[next.difficulty].xp,
-      credits: DIFFICULTIES[next.difficulty].credits,
-    },
-  });
-});
-
-app.delete("/api/quests/:id", requireUser, (req, res) => {
-  const result = db
-    .prepare(
-      "DELETE FROM quests WHERE id=? AND user_id=?"
-    )
-    .run(
-      Number(req.params.id),
-      req.user.id
-    );
-
-  if (!result.changes) {
-    return res.status(404).json({
-      error: "That deed is not in your ledger.",
-    });
-  }
-
-  res.status(204).end();
-});
-
-app.post("/api/quests/:id/complete", requireUser, (req, res) => {
-  const id = Number(req.params.id);
-
-  const q = db
-    .prepare(
-      "SELECT * FROM quests WHERE id=? AND user_id=?"
-    )
-    .get(id, req.user.id);
-
-  if (!q) {
-    return res.status(404).json({
-      error: "That deed is not in your ledger.",
-    });
-  }
-
-  const reward = DIFFICULTIES[q.difficulty];
-
-  const before = publicUser(req.user);
-
-  const result = transaction(() => {
-    const current = db
-      .prepare("SELECT * FROM users WHERE id=?")
-      .get(req.user.id);
-
-    const today = new Date()
-      .toISOString()
-      .slice(0, 10);
-
-    let streak = current.streak;
-
-    if (current.last_activity !== today) {
-      if (current.last_activity) {
-        const last = new Date(
-          current.last_activity + "T00:00:00"
-        );
-
-        const now = new Date(
-          today + "T00:00:00"
-        );
-
-        const diff = Math.round(
-          (now - last) / 86400000
-        );
-
-        streak =
-          diff === 1
-            ? current.streak + 1
-            : 1;
-      } else {
-        streak = 1;
-      }
+    if (v.error) {
+      return res.status(400).json({
+        error: v.error,
+      });
     }
 
-    const newXp = current.xp + reward.xp;
+    const q = db
+      .prepare(
+        "SELECT * FROM quests WHERE id=? AND user_id=?"
+      )
+      .get(id, req.user.id);
 
-    const p = calculateProgress(newXp);
-
-    const attrColumn = {
-      BODY: "body",
-      MIND: "mind",
-      TECH: "tech",
-      COOL: "cool",
-    }[q.category];
-
-    db.prepare(
-      `UPDATE users
-       SET xp=?,
-           level=?,
-           streak=?,
-           last_activity=?,
-           credits=?,
-           ${attrColumn}=${attrColumn}+1
-       WHERE id=?`
-    ).run(
-      newXp,
-      p.level,
-      streak,
-      today,
-      current.credits + reward.credits,
-      current.id
-    );
+    if (!q) {
+      return res.status(404).json({
+        error: "That deed is not in your ledger.",
+      });
+    }
 
     db.prepare(
-      `INSERT INTO completions
-       (user_id,quest_id,quest_name,category,xp,credits)
-       VALUES(?,?,?,?,?,?)`
+      "UPDATE quests SET name=?,category=?,difficulty=? WHERE id=?"
     ).run(
-      current.id,
-      q.id,
-      q.name,
-      q.category,
-      reward.xp,
-      reward.credits
+      v.name,
+      v.category,
+      v.difficulty,
+      id
     );
 
-    db.prepare(
-      "DELETE FROM quests WHERE id=? AND user_id=?"
-    ).run(
-      q.id,
-      current.id
-    );
+    const next = db
+      .prepare("SELECT * FROM quests WHERE id=?")
+      .get(id);
 
-    return db
-      .prepare("SELECT * FROM users WHERE id=?")
-      .get(current.id);
-  });
+    res.json({
+      quest: {
+        ...next,
+        xp: DIFFICULTIES[next.difficulty].xp,
+        credits:
+          DIFFICULTIES[next.difficulty].credits,
+      },
+    });
+  }
+);
 
-  const after = publicUser(result);
+app.delete(
+  "/api/quests/:id",
+  requireUser,
+  (req, res) => {
+    const result = db
+      .prepare(
+        "DELETE FROM quests WHERE id=? AND user_id=?"
+      )
+      .run(
+        Number(req.params.id),
+        req.user.id
+      );
 
-  const firstRank = before.rank !== after.rank;
+    if (!result.changes) {
+      return res.status(404).json({
+        error: "That deed is not in your ledger.",
+      });
+    }
 
-  const levelUp = after.level > before.level;
+    res.status(204).end();
+  }
+);
 
-  res.json({
-    user: after,
-    credits: reward.credits,
-    xp: reward.xp,
-    levelUp,
-    rankUp: firstRank,
-    attribute: q.category,
-    questName: q.name,
-  });
-});
+app.post(
+  "/api/quests/:id/complete",
+  requireUser,
+  (req, res) => {
+    const id = Number(req.params.id);
+
+    const q = db
+      .prepare(
+        "SELECT * FROM quests WHERE id=? AND user_id=?"
+      )
+      .get(id, req.user.id);
+
+    if (!q) {
+      return res.status(404).json({
+        error: "That deed is not in your ledger.",
+      });
+    }
+
+    const reward = DIFFICULTIES[q.difficulty];
+
+    const before = publicUser(req.user);
+
+    const result = transaction(() => {
+      const current = db
+        .prepare("SELECT * FROM users WHERE id=?")
+        .get(req.user.id);
+
+      const today = new Date()
+        .toISOString()
+        .slice(0, 10);
+
+      let streak = current.streak;
+
+      if (current.last_activity !== today) {
+        if (current.last_activity) {
+          const last = new Date(
+            current.last_activity + "T00:00:00"
+          );
+
+          const now = new Date(
+            today + "T00:00:00"
+          );
+
+          const diff = Math.round(
+            (now - last) / 86400000
+          );
+
+          streak =
+            diff === 1
+              ? current.streak + 1
+              : 1;
+        } else {
+          streak = 1;
+        }
+      }
+
+      const newXp = current.xp + reward.xp;
+
+      const p = calculateProgress(newXp);
+
+      const attrColumn = {
+        BODY: "body",
+        MIND: "mind",
+        TECH: "tech",
+        COOL: "cool",
+      }[q.category];
+
+      db.prepare(
+        `UPDATE users
+         SET xp=?,
+             level=?,
+             streak=?,
+             last_activity=?,
+             credits=?,
+             ${attrColumn}=${attrColumn}+1
+         WHERE id=?`
+      ).run(
+        newXp,
+        p.level,
+        streak,
+        today,
+        current.credits + reward.credits,
+        current.id
+      );
+
+      db.prepare(
+        `INSERT INTO completions
+         (user_id,quest_id,quest_name,category,xp,credits)
+         VALUES(?,?,?,?,?,?)`
+      ).run(
+        current.id,
+        q.id,
+        q.name,
+        q.category,
+        reward.xp,
+        reward.credits
+      );
+
+      db.prepare(
+        "DELETE FROM quests WHERE id=? AND user_id=?"
+      ).run(
+        q.id,
+        current.id
+      );
+
+      return db
+        .prepare("SELECT * FROM users WHERE id=?")
+        .get(current.id);
+    });
+
+    const after = publicUser(result);
+
+    const firstRank =
+      before.rank !== after.rank;
+
+    const levelUp =
+      after.level > before.level;
+
+    res.json({
+      user: after,
+      credits: reward.credits,
+      xp: reward.xp,
+      levelUp,
+      rankUp: firstRank,
+      attribute: q.category,
+      questName: q.name,
+    });
+  }
+);
 
 /* ---------------- HISTORY ---------------- */
 
-app.get("/api/history", requireUser, (req, res) => {
-  const entries = db
-    .prepare(
-      `
-      SELECT
-        id,
-        quest_name AS questName,
-        category,
-        xp,
-        credits,
-        completed_at AS completedAt
-      FROM completions
-      WHERE user_id=?
-      ORDER BY id DESC
-      LIMIT 50
-      `
-    )
-    .all(req.user.id);
+app.get(
+  "/api/history",
+  requireUser,
+  (req, res) => {
+    const entries = db
+      .prepare(
+        `
+        SELECT
+          id,
+          quest_name AS questName,
+          category,
+          xp,
+          credits,
+          completed_at AS completedAt
+        FROM completions
+        WHERE user_id=?
+        ORDER BY id DESC
+        LIMIT 50
+        `
+      )
+      .all(req.user.id);
 
-  res.json({ entries });
-});
+    res.json({ entries });
+  }
+);
 
 /* ---------------- ARMOURY ---------------- */
 
-app.get("/api/armory", requireUser, (req, res) => {
-  const items = db
-    .prepare(
-      `
-      SELECT
-        a.*,
-        CASE
-          WHEN i.user_id IS NULL THEN 0
-          ELSE 1
-        END AS owned
-      FROM armory a
-      LEFT JOIN inventory i
-        ON i.item_id=a.id
-        AND i.user_id=?
-      ORDER BY a.kind,a.cost,a.id
-      `
-    )
-    .all(req.user.id)
-    .map((x) => ({
-      ...x,
-      owned: Boolean(x.owned),
-    }));
+app.get(
+  "/api/armory",
+  requireUser,
+  (req, res) => {
+    const items = db
+      .prepare(
+        `
+        SELECT
+          a.*,
+          CASE
+            WHEN i.user_id IS NULL THEN 0
+            ELSE 1
+          END AS owned
+        FROM armory a
+        LEFT JOIN inventory i
+          ON i.item_id=a.id
+          AND i.user_id=?
+        ORDER BY a.kind,a.cost,a.id
+        `
+      )
+      .all(req.user.id)
+      .map((x) => ({
+        ...x,
+        owned: Boolean(x.owned),
+      }));
 
-  res.json({ items });
-});
-
-app.post("/api/armory/:id/buy", requireUser, (req, res) => {
-  const item = db
-    .prepare("SELECT * FROM armory WHERE id=?")
-    .get(req.params.id);
-
-  if (!item) {
-    return res.status(404).json({
-      error: "That item is not in the armoury.",
-    });
+    res.json({ items });
   }
+);
 
-  const alreadyOwned = db
-    .prepare(
-      "SELECT 1 FROM inventory WHERE user_id=? AND item_id=?"
-    )
-    .get(
-      req.user.id,
-      item.id
-    );
+app.post(
+  "/api/armory/:id/buy",
+  requireUser,
+  (req, res) => {
+    const item = db
+      .prepare(
+        "SELECT * FROM armory WHERE id=?"
+      )
+      .get(req.params.id);
 
-  if (alreadyOwned) {
-    return res.status(409).json({
-      error: "You already own this item.",
-    });
-  }
+    if (!item) {
+      return res.status(404).json({
+        error: "That item is not in the armoury.",
+      });
+    }
 
-  const user = db
-    .prepare("SELECT * FROM users WHERE id=?")
-    .get(req.user.id);
+    const alreadyOwned = db
+      .prepare(
+        "SELECT 1 FROM inventory WHERE user_id=? AND item_id=?"
+      )
+      .get(
+        req.user.id,
+        item.id
+      );
 
-  if (user.credits < item.cost) {
-    return res.status(400).json({
-      error: "Not enough crowns.",
-    });
-  }
+    if (alreadyOwned) {
+      return res.status(409).json({
+        error: "You already own this item.",
+      });
+    }
 
-  const updated = transaction(() => {
-    db.prepare(
-      "UPDATE users SET credits=credits-? WHERE id=?"
-    ).run(
-      item.cost,
-      user.id
-    );
-
-    db.prepare(
-      "INSERT INTO inventory(user_id,item_id) VALUES(?,?)"
-    ).run(
-      user.id,
-      item.id
-    );
-
-    return db
+    const user = db
       .prepare("SELECT * FROM users WHERE id=?")
-      .get(user.id);
-  });
+      .get(req.user.id);
 
-  res.json({
-    item,
-    user: publicUser(updated),
-  });
-});
+    if (user.credits < item.cost) {
+      return res.status(400).json({
+        error: "Not enough crowns.",
+      });
+    }
+
+    const updated = transaction(() => {
+      db.prepare(
+        "UPDATE users SET credits=credits-? WHERE id=?"
+      ).run(
+        item.cost,
+        user.id
+      );
+
+      db.prepare(
+        "INSERT INTO inventory(user_id,item_id) VALUES(?,?)"
+      ).run(
+        user.id,
+        item.id
+      );
+
+      return db
+        .prepare("SELECT * FROM users WHERE id=?")
+        .get(user.id);
+    });
+
+    res.json({
+      item,
+      user: publicUser(updated),
+    });
+  }
+);
 
 /* ---------------- FRONTEND ---------------- */
 
@@ -578,15 +630,31 @@ const dist = path.join(__dirname, "..", "dist");
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(dist));
 
-  // Express 5 compatible catch-all route.
-  // IMPORTANT: do not use app.get("*", ...) here.
-  app.get("/{*splat}", (_req, res) => {
-    res.sendFile(path.join(dist, "index.html"));
+  /*
+    Express 5 compatible SPA fallback.
+
+    We intentionally do NOT use:
+      app.get("*", ...)
+
+    because that causes a path-to-regexp error
+    with the Express version being used on Render.
+  */
+
+  app.use((req, res, next) => {
+    if (req.path.startsWith("/api/")) {
+      return next();
+    }
+
+    res.sendFile(
+      path.join(dist, "index.html")
+    );
   });
 }
 
 /* ---------------- START SERVER ---------------- */
 
 app.listen(PORT, () => {
-  console.log(`EMBERHOLD API listening on port ${PORT}`);
+  console.log(
+    `EMBERHOLD API listening on port ${PORT}`
+  );
 });
