@@ -1,0 +1,13 @@
+import {useState} from "react";
+import {Link,useNavigate} from "react-router-dom";
+import {Field,Panel,useTitle} from "../components/ui.jsx";
+import {useAuth} from "../context/AuthContext.jsx";
+import {useToast} from "../context/ToastContext.jsx";
+export default function Enter(){
+ useTitle("Enter — EMBERHOLD"); const [mode,setMode]=useState("login"); const [form,setForm]=useState({displayName:"",email:"",password:""}); const [error,setError]=useState(""); const [busy,setBusy]=useState(false);
+ const {login,signup}=useAuth(); const toast=useToast(); const nav=useNavigate(); const set=k=>e=>setForm({...form,[k]:e.target.value});
+ async function submit(e){e.preventDefault();setError("");if(mode==="signup"&&form.displayName.trim().length<2)return setError("Choose a name of at least 2 characters.");if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))return setError("Enter a valid email address.");if(form.password.length<8)return setError("Password must be at least 8 characters.");setBusy(true);try{mode==="login"?await login(form):await signup(form);nav("/app")}catch(err){if(err.network)toast({tone:"bad",title:"Connection lost",body:err.message});else setError(err.message)}finally{setBusy(false)}}
+ return <div className="center-page"><Panel className="auth"><Link to="/" className="brand">◆ EMBERHOLD</Link><p className="kicker">The gate of the hold</p><h1>{mode==="login"?"Present yourself":"Swear your oath"}</h1>
+ <div className="tabs"><button className={mode==="login"?"active":""} onClick={()=>{setMode("login");setError("")}}>Sign in</button><button className={mode==="signup"?"active":""} onClick={()=>{setMode("signup");setError("")}}>New account</button></div>
+ {error&&<p className="form-error" role="alert">{error}</p>}<form onSubmit={submit}>{mode==="signup"&&<Field id="displayName" label="Your name"><input id="displayName" value={form.displayName} onChange={set("displayName")} autoComplete="nickname"/></Field>}<Field id="email" label="Email"><input id="email" type="email" value={form.email} onChange={set("email")} autoComplete="email"/></Field><Field id="password" label="Password"><input id="password" type="password" value={form.password} onChange={set("password")} autoComplete={mode==="login"?"current-password":"new-password"}/></Field><button className="btn primary full" disabled={busy}>{busy?"Working…":mode==="login"?"Enter the hold":"Take the oath"}</button></form><p className="fine">By continuing you accept the <Link to="/terms">terms</Link>.</p></Panel></div>
+}
