@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b0e13"/>
+      <stop offset=".55" stop-color="#10151c"/>
+      <stop offset="1" stop-color="#141317"/>
+    </linearGradient>
+    <linearGradient id="horizon" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d97b3a" stop-opacity="0"/>
+      <stop offset=".5" stop-color="#d97b3a" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#d97b3a" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="moonGlow">
+      <stop offset="0" stop-color="#e8e2cf" stop-opacity=".32"/>
+      <stop offset=".4" stop-color="#e8e2cf" stop-opacity=".12"/>
+      <stop offset="1" stop-color="#e8e2cf" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vig" cx=".5" cy=".42" r=".75">
+      <stop offset=".55" stop-color="#000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".5"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#sky)"/>
+  <rect y="430" width="1600" height="300" fill="url(#horizon)"/>
+
+  <!-- stars -->
+  <g fill="#cfd6da">
+    <circle cx="80" cy="90" r="1.4" opacity=".7"/><circle cx="180" cy="40" r="1" opacity=".45"/>
+    <circle cx="260" cy="140" r="1.2" opacity=".55"/><circle cx="350" cy="70" r="1.6" opacity=".8"/>
+    <circle cx="430" cy="180" r="1" opacity=".4"/><circle cx="520" cy="50" r="1.3" opacity=".6"/>
+    <circle cx="610" cy="120" r="1" opacity=".45"/><circle cx="700" cy="60" r="1.5" opacity=".7"/>
+    <circle cx="790" cy="160" r="1.1" opacity=".5"/><circle cx="880" cy="90" r="1.3" opacity=".6"/>
+    <circle cx="960" cy="40" r="1" opacity=".4"/><circle cx="1040" cy="110" r="1.2" opacity=".5"/>
+    <circle cx="1120" cy="60" r="1" opacity=".45"/><circle cx="1250" cy="90" r="1.3" opacity=".55"/>
+    <circle cx="1340" cy="40" r="1.1" opacity=".5"/><circle cx="1430" cy="130" r="1.5" opacity=".7"/>
+    <circle cx="1520" cy="70" r="1" opacity=".45"/><circle cx="1560" cy="170" r="1.2" opacity=".5"/>
+    <circle cx="140" cy="220" r="1" opacity=".4"/><circle cx="300" cy="250" r="1.1" opacity=".45"/>
+    <circle cx="480" cy="240" r="1" opacity=".35"/><circle cx="640" cy="210" r="1.2" opacity=".5"/>
+    <circle cx="820" cy="240" r="1" opacity=".4"/><circle cx="980" cy="200" r="1.1" opacity=".45"/>
+    <circle cx="1340" cy="230" r="1" opacity=".4"/><circle cx="1490" cy="250" r="1.2" opacity=".5"/>
+  </g>
+
+  <!-- moon -->
+  <circle cx="1160" cy="190" r="170" fill="url(#moonGlow)"/>
+  <circle cx="1160" cy="190" r="64" fill="#e8e2cf"/>
+  <circle cx="1140" cy="175" r="12" fill="#d8d2bd" opacity=".7"/>
+  <circle cx="1180" cy="205" r="8" fill="#d8d2bd" opacity=".6"/>
+
+  <!-- dragon in flight, silhouette against the glow -->
+  <g fill="#0a0d10">
+    <path d="M1085 226 C1060 180 1030 150 995 135 C1015 165 1020 185 1015 205 C1000 190 985 182 968 180 C985 205 995 222 998 238 C985 232 972 230 960 232 C975 248 990 258 1005 262 Z"/>
+    <path d="M1100 222 C1120 170 1150 135 1190 115 C1175 150 1172 172 1178 194 C1192 178 1206 170 1222 168 C1210 192 1204 210 1202 226 C1214 219 1226 216 1238 218 C1226 236 1212 246 1196 250 Z"/>
+    <ellipse cx="1090" cy="240" rx="55" ry="18" transform="rotate(-8 1090 240)"/>
+    <path d="M1040 246 C980 262 930 250 900 220 C940 258 1000 268 1046 256 Z"/>
+    <path d="M1128 232 C1150 220 1165 206 1172 190 L1204 184 L1188 204 C1180 214 1168 222 1150 230 Z"/>
+    <path d="M1198 186 L1214 178 L1206 196 Z"/>
+  </g>
+
+  <!-- far range -->
+  <path d="M0 640 L120 560 L240 620 L340 545 L470 625 L590 555 L700 630 L830 560 L950 635 L1080 570 L1200 640 L1330 585 L1460 645 L1600 600 L1600 900 L0 900 Z" fill="#121922"/>
+  <!-- mid range -->
+  <path d="M0 700 L150 610 L300 680 L450 595 L620 690 L780 615 L940 700 L1100 630 L1260 705 L1420 640 L1600 700 L1600 900 L0 900 Z" fill="#0d1319"/>
+
+  <!-- fog -->
+  <rect y="648" width="1600" height="46" fill="#cfd6da" opacity=".05"/>
+  <rect y="706" width="1600" height="70" fill="#cfd6da" opacity=".04"/>
+
+  <!-- near crag -->
+  <path d="M0 900 L0 780 L200 720 L420 780 L600 740 L820 800 L1000 760 L1160 820 L1320 700 L1380 660 L1450 640 L1520 680 L1600 660 L1600 900 Z" fill="#080b0e"/>
+
+  <!-- the hold, with lit windows and banner -->
+  <g transform="translate(1290 520)">
+    <g fill="#05070a">
+      <rect x="40" y="60" width="90" height="130"/>
+      <rect x="20" y="30" width="26" height="160"/>
+      <rect x="70" y="8" width="30" height="182"/>
+      <rect x="124" y="40" width="24" height="150"/>
+      <polygon points="20,30 33,6 46,30"/>
+      <polygon points="70,8 85,-18 100,8"/>
+      <polygon points="124,40 136,18 148,40"/>
+    </g>
+    <g fill="#d97b3a" opacity=".85">
+      <rect x="32" y="70" width="5" height="8"/><rect x="78" y="60" width="5" height="8"/>
+      <rect x="84" y="100" width="5" height="8"/><rect x="134" y="80" width="5" height="8"/>
+      <rect x="58" y="110" width="5" height="8"/>
+    </g>
+    <line x1="85" y1="-18" x2="85" y2="-48" stroke="#05070a" stroke-width="3"/>
+    <polygon points="85,-48 120,-40 85,-32" fill="#d97b3a"/>
+  </g>
+
+  <!-- stray embers -->
+  <g fill="#d97b3a" opacity=".6">
+    <circle cx="200" cy="600" r="1.6"/><circle cx="262" cy="558" r="1.2"/>
+    <circle cx="340" cy="612" r="1.4"/><circle cx="1500" cy="520" r="1.3"/>
+    <circle cx="1424" cy="562" r="1.1"/>
+  </g>
+
+  <rect width="1600" height="900" fill="url(#vig)"/>
+</svg>
